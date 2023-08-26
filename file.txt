@@ -1,0 +1,46 @@
+USER="`/usr/bin/id -un`"
+LOGNAME=$USER
+MAIL="/var/spool/mail/$USER"
+
+# Path manipulation
+if [ "$EUID" = "0" ]; then
+    pathmunge /usr/sbin
+    pathmunge /usr/local/sbin
+else
+    pathmunge /usr/local/sbin after
+    pathmunge /usr/sbin after
+fi
+
+HOSTNAME=`/usr/bin/hostnamectl --transient  2>/dev/null`
+HISTSIZE=1000
+if [ "$HISTCONTROL" = "ignorespace" ] ; then
+    export HISTCONTROL=ignoreboth
+else
+    export HISTCONTROL=ignoredups
+fi
+
+export PATH USER LOGNAME MAIL HOSTNAME HISTSIZE HISTCONTROL
+export JAVA_HOME=/usr/lib/jvm/java-17-amazon-corretto.x86_64
+export PATH=$JAVA_HOME/bin:$PATH
+
+for i in /etc/profile.d/*.sh /etc/profile.d/sh.local ; do
+    if [ -r "$i" ]; then
+        if [ "${-#*i}" != "$-" ]; then
+            . "$i"
+        else
+            . "$i" >/dev/null
+        fi
+    fi
+done
+
+unset i
+unset -f pathm
+if [ -n "${BASH_VERSION-}" ] ; then
+    if [ -f /etc/bashrc ] ; then
+        # Bash login shells run only /etc/profile
+        # Bash non-login shells run only /etc/bashrc
+        # Check for double sourcing is done in /etc/bashrc.
+
+        . /etc/bashrc
+    fi
+fi
